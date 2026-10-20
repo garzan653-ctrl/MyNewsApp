@@ -1,0 +1,8 @@
+.dart_tool
+.git
+.idea
+.pub-cache
+.vscode
+build
+coverage
+ios/Pods

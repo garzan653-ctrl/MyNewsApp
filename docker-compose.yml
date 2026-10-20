@@ -1,0 +1,13 @@
+services:
+  my-news:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MY_NEWS_DATABASE: /data/news.sqlite3
+    volumes:
+      - my-news-data:/data
+    restart: unless-stopped
+
+volumes:
+  my-news-data:

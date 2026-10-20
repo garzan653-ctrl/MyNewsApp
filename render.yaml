@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: my-news
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: my-news-data
+      mountPath: /data
+      sizeGB: 1
