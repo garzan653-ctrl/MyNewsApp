@@ -5,6 +5,9 @@ services:
       - "8000:8000"
     environment:
       MY_NEWS_DATABASE: /data/news.sqlite3
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      MY_NEWS_MAX_AI_ANALYSES_PER_DAY: ${MY_NEWS_MAX_AI_ANALYSES_PER_DAY:-25}
     volumes:
       - my-news-data:/data
     restart: unless-stopped

@@ -1,11 +1,11 @@
 {
-    "name": "my_news",
-    "short_name": "my_news",
+    "name": "My News",
+    "short_name": "My News",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#f4f6f8",
+    "theme_color": "#17243a",
+    "description": "Current headlines and balanced coverage from multiple news outlets.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -4,6 +4,13 @@ services:
     runtime: docker
     plan: starter
     healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: MY_NEWS_MAX_AI_ANALYSES_PER_DAY
+        value: "25"
     disk:
       name: my-news-data
       mountPath: /data

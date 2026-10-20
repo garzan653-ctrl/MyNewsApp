@@ -2,20 +2,24 @@
 
 My News is a Flutter app with a Python backend. The backend collects current
 headlines from RSS feeds, groups closely related coverage, and keeps up to
-seven days of articles in SQLite. The Flutter app can run on a phone, in a
-browser, or be served by the same deployment as the API.
+seven days of articles in SQLite. The app shows publisher-provided story
+summaries inline and can generate cached AI analysis of the available coverage.
 
 ## Run the complete app locally
 
-Install Docker Desktop, open a terminal in this project directory, and run:
+Install Docker Desktop and Flutter, open a terminal in this project directory,
+and set your OpenAI key in the environment (do not commit it):
 
 ```bash
+export OPENAI_API_KEY=your-openai-api-key
 docker compose up --build
 ```
 
-Open [http://localhost:8000](http://localhost:8000) for the app,
-[http://localhost:8000/health](http://localhost:8000/health) for server status,
-or [http://localhost:8000/docs](http://localhost:8000/docs) for the API.
+On Windows PowerShell, use `$env:OPENAI_API_KEY="your-openai-api-key"` before
+starting Docker Compose. Open [http://localhost:8000](http://localhost:8000)
+for the app, [http://localhost:8000/health](http://localhost:8000/health) for
+server status, or [http://localhost:8000/docs](http://localhost:8000/docs)
+for the API.
 The backend fetches the first headlines on startup and refreshes every 15
 minutes. Its Docker volume keeps the SQLite database across restarts.
 
@@ -34,11 +38,18 @@ reachable address.
 ## Run on an iPhone
 
 The backend currently collects headlines from BBC News, NPR, The Guardian, and
-Al Jazeera. Stories show their covering outlets on the list; open a story to
-see links to each publisher's original article. Add or replace RSS/Atom URLs
-with the `MY_NEWS_FEEDS` backend setting.
+Al Jazeera. Story details display each available RSS summary without leaving
+the app; original publisher links remain optional citations. RSS feeds do not
+provide full article text consistently. My News displays and summarizes the
+publisher-supplied excerpts rather than republishing full copyrighted articles.
+Add or replace RSS/Atom URLs with the `MY_NEWS_FEEDS` backend setting.
 
-For an iPhone on the same Wi-Fi network as a locally running backend, find the
+After deploying the app with the Render Blueprint below, open the resulting
+HTTPS `onrender.com` URL in iPhone Safari. To install it like an app, use Safari's
+Share button and choose **Add to Home Screen**. This uses the hosted web app;
+installing the native iOS build still requires macOS and Xcode.
+
+For local iPhone testing on the same Wi-Fi network as the computer, find the
 computer's local IP address and run on a Mac with Xcode installed:
 
 ```bash
@@ -67,7 +78,10 @@ account.
 2. In Render, create a new **Blueprint** and select that repository. Render
    reads `render.yaml`, builds the Flutter web app and backend together, and
    provisions persistent storage for the seven-day SQLite article database.
-3. Open the `my-news` service's `onrender.com` URL. The same address serves
+3. Enter the OpenAI API key when Render prompts for `OPENAI_API_KEY`; or add it
+   as a secret environment variable on the service's dashboard. Do not add it
+   to source code, Flutter build arguments, or GitHub.
+4. Open the `my-news` service's `onrender.com` URL. The same address serves
    both the app and the API.
 
 The Render service configuration uses a paid Starter instance and a 1 GB
@@ -75,6 +89,14 @@ persistent disk so scheduled collection and seven-day retention continue to
 work across restarts. Review Render's current pricing before deploying. For a
 free or ephemeral container host, use its Docker deployment option and expect
 the stored articles to be lost when the instance is replaced.
+
+AI analysis is generated only when requested, stored with its source-version
+fingerprint, and reused for unchanged coverage. The default model is
+`gpt-4o-mini`; set `OPENAI_MODEL` to another compatible chat-completions model
+if desired. The default limit is 25 newly generated analyses per UTC day; set
+`MY_NEWS_MAX_AI_ANALYSES_PER_DAY` to adjust it. OpenAI API access and usage
+billing must be enabled for the server key. Errors are reported in the app,
+and the API key remains on the backend.
 
 ## GitHub
 
@@ -90,6 +112,9 @@ iOS simulator build on every push to `main` or `master` and for pull requests.
 | `MY_NEWS_DATABASE` | `backend/data/news.sqlite3` | SQLite database file |
 | `MY_NEWS_REFRESH_SECONDS` | `900` | Seconds between feed refreshes (minimum 60) |
 | `MY_NEWS_WEB_DIR` | `build/web` | Flutter web build served by the backend |
+| `OPENAI_API_KEY` | unset | Private server-side OpenAI API credential; required for AI analysis |
+| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI chat-completions model for analysis |
+| `MY_NEWS_MAX_AI_ANALYSES_PER_DAY` | `25` | Daily UTC cap on newly generated analyses; `0` disables analysis |
 | `LOG_LEVEL` | `INFO` | Python server log level |
 
 ## API
@@ -97,10 +122,10 @@ iOS simulator build on every push to `main` or `master` and for pull requests.
 - `GET /health` — database, article-count, and configured-feed status
 - `GET /stories` — recent stories, newest first; accepts an optional `limit`
 - `GET /stories/{id}` — grouped publisher coverage for one story
+- `POST /stories/{id}/analysis` — generate and cache AI coverage analysis
 
 The backend retains articles for seven days, removes expired records, and caps
 the cache at 750 articles. Story groupings are based on overlapping headline
-keywords. Detail pages use publisher-provided feed summaries and link to the
-original articles. AI analysis and background research are not generated by
-this backend, so the API reports AI analysis as unavailable rather than
-presenting invented output.
+keywords. Detail pages include publisher-provided feed summaries and links to
+original articles. AI analysis works after `OPENAI_API_KEY` is configured and
+uses only the headline and RSS excerpts returned by the feeds.

@@ -27,9 +27,8 @@ class Story {
       headline: json['headline'] ?? 'Untitled story',
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
       publisherCount: json['publisherCount'] ?? 0,
-      publishers: (json['publishers'] as List? ?? [])
-          .map((e) => e.toString())
-          .toList(),
+      publishers:
+          (json['publishers'] as List? ?? []).map((e) => e.toString()).toList(),
       overview: json['overview'],
       sources: (json['sources'] as List? ?? [])
           .map((e) => SourceArticle.fromJson(e))
@@ -40,17 +39,33 @@ class Story {
       ai: json['ai'] == null ? null : AiAnalysis.fromJson(json['ai']),
     );
   }
+
+  Story copyWith({AiAnalysis? ai}) {
+    return Story(
+      id: id,
+      headline: headline,
+      updatedAt: updatedAt,
+      publisherCount: publisherCount,
+      publishers: publishers,
+      overview: overview,
+      sources: sources,
+      background: background,
+      ai: ai ?? this.ai,
+    );
+  }
 }
 
 class SourceArticle {
   final String publisher;
   final String title;
+  final String summary;
   final String url;
   final DateTime? publishedAt;
 
   const SourceArticle({
     required this.publisher,
     required this.title,
+    this.summary = '',
     required this.url,
     this.publishedAt,
   });
@@ -59,6 +74,7 @@ class SourceArticle {
     return SourceArticle(
       publisher: json['publisher'] ?? 'Unknown publisher',
       title: json['title'] ?? 'Article',
+      summary: json['summary'] ?? '',
       url: json['url'] ?? '',
       publishedAt: DateTime.tryParse(json['publishedAt'] ?? ''),
     );

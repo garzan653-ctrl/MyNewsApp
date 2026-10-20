@@ -79,12 +79,35 @@ class PerspectiveScreen extends StatelessWidget {
 
               final source = story.sources[i];
               return Card(
-                child: ListTile(
-                  leading: const Icon(Icons.article_outlined),
-                  title: Text(source.publisher),
-                  subtitle: Text(source.title),
-                  trailing: const Icon(Icons.open_in_new),
-                  onTap: () => _open(source.url, context),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        source.publisher,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(source.title),
+                      if (source.summary.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          source.summary,
+                          style: const TextStyle(height: 1.4),
+                        ),
+                      ],
+                      if (source.url.isNotEmpty)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () => _open(source.url, context),
+                            icon: const Icon(Icons.open_in_new, size: 16),
+                            label: const Text('Open original (optional)'),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               );
             }),

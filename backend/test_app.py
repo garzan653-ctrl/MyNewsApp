@@ -1,11 +1,13 @@
+import os
 import sqlite3
 import tempfile
 import unittest
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 import app as news_app
@@ -77,6 +79,13 @@ class NewsApiTests(unittest.TestCase):
             story = detail.json()
             self.assertEqual(story["publisherCount"], 2)
             self.assertEqual({source["publisher"] for source in story["sources"]}, {"NPR", "BBC News"})
+            self.assertEqual(
+                {source["summary"] for source in story["sources"]},
+                {
+                    "The Senate approved a major climate and energy bill.",
+                    "Lawmakers passed a landmark climate bill overnight.",
+                },
+            )
             self.assertTrue(all(source["url"].startswith("https://") for source in story["sources"]))
             self.assertIsNone(story["ai"])
 
@@ -89,7 +98,82 @@ class NewsApiTests(unittest.TestCase):
         with TestClient(news_app.app) as client:
             response = client.get("/health")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok", "articles": 3, "feeds": 0})
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ok",
+                "articles": 3,
+                "feeds": 0,
+                "aiConfigured": bool(os.getenv("OPENAI_API_KEY", "").strip()),
+            },
+        )
+
+    def test_analysis_requires_server_side_api_key(self):
+        with patch.dict(os.environ, {"OPENAI_API_KEY": ""}):
+            with TestClient(news_app.app) as client:
+                story = client.get("/stories").json()["stories"][0]
+                response = client.post(f'/stories/{story["id"]}/analysis')
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("OPENAI_API_KEY", response.json()["detail"])
+
+    def test_analysis_is_generated_once_and_cached(self):
+        generated_analysis = {
+            "status": "available",
+            "overview": "Both outlets report the proposed climate legislation.",
+            "agreement": "The Senate passed the bill.",
+            "uncertainty": "Its next procedural step is unclear.",
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "inputScope": "publisher headlines and RSS excerpts",
+            "perspectives": [
+                {
+                    "name": "Legislative coverage",
+                    "text": "Both sources describe Senate approval.",
+                    "supportingArticleIndexes": [0, 1],
+                }
+            ],
+        }
+
+        with (
+            patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}),
+            patch(
+                "app._request_openai_analysis",
+                new_callable=AsyncMock,
+                return_value=generated_analysis,
+            ) as analyze,
+            TestClient(news_app.app) as client,
+        ):
+            story = next(
+                story
+                for story in client.get("/stories").json()["stories"]
+                if story["publisherCount"] == 2
+            )
+            first = client.post(f'/stories/{story["id"]}/analysis')
+            second = client.post(f'/stories/{story["id"]}/analysis')
+            detail = client.get(f'/stories/{story["id"]}')
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.json(), generated_analysis)
+        self.assertEqual(analyze.await_count, 1)
+        self.assertEqual(detail.json()["ai"], generated_analysis)
+
+    def test_analysis_rejects_support_indexes_outside_story_sources(self):
+        with self.assertRaises(HTTPException) as context:
+            news_app._analysis_response_shape(
+                {
+                    "overview": "Coverage summary.",
+                    "agreement": "",
+                    "uncertainty": "",
+                    "perspectives": [
+                        {
+                            "name": "Unsupported",
+                            "text": "Perspective",
+                            "supportingArticleIndexes": [3],
+                        }
+                    ],
+                },
+                source_count=1,
+            )
+        self.assertEqual(context.exception.status_code, 502)
 
     def test_default_feed_publishers_use_short_outlet_names(self):
         self.assertEqual(

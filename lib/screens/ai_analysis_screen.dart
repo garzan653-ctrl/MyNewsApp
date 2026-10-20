@@ -28,13 +28,25 @@ class AiAnalysisScreen extends StatelessWidget {
               const Spacer(),
               if (ai.generatedAt != null)
                 Text(
-                  DateFormat('MMM d, h:mm a')
-                      .format(ai.generatedAt!.toLocal()),
+                  DateFormat('MMM d, h:mm a').format(ai.generatedAt!.toLocal()),
                   style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
                 ),
             ],
           ),
           const SizedBox(height: 18),
+          Card(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                'This AI analysis summarizes publisher headlines and feed '
+                'excerpts. Check the source summaries for context; feed '
+                'excerpts may not include every detail.',
+                style: TextStyle(height: 1.4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           _Box(
             title: 'Overview',
             child: Text(ai.overview, style: const TextStyle(height: 1.45)),

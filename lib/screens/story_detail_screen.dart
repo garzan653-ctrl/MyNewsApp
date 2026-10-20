@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/story.dart';
 import '../services/news_api.dart';
@@ -21,6 +22,8 @@ class StoryDetailScreen extends StatefulWidget {
 class _StoryDetailScreenState extends State<StoryDetailScreen> {
   final NewsApi _api = NewsApi();
   late Future<Story> _storyFuture;
+  bool _analysisLoading = false;
+  String? _analysisError;
 
   @override
   void initState() {
@@ -42,6 +45,36 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open this link.')),
       );
+    }
+  }
+
+  Future<void> _openAnalysis(Story story) async {
+    if (_analysisLoading) return;
+    setState(() {
+      _analysisLoading = true;
+      _analysisError = null;
+    });
+    try {
+      final analysis = story.ai ?? await _api.generateStoryAnalysis(story.id);
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AiAnalysisScreen(story: story.copyWith(ai: analysis)),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _analysisError = error.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _analysisLoading = false;
+        });
+      }
     }
   }
 
@@ -107,16 +140,98 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                 ),
               ),
               _Section(
-                title: 'Original coverage',
+                title: 'Coverage at a glance',
                 child: story.sources.isEmpty
                     ? const Text('No source coverage available.')
                     : Column(
                         children: story.sources.map((source) {
-                          return _ActionTile(
-                            icon: Icons.open_in_new,
-                            title: source.publisher,
-                            subtitle: source.title,
-                            onTap: () => _open(source.url),
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.newspaper_rounded,
+                                        size: 18,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          source.publisher,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      if (source.publishedAt != null)
+                                        Text(
+                                          DateFormat('MMM d').format(
+                                            source.publishedAt!.toLocal(),
+                                          ),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelSmall,
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    source.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (source.summary.trim().isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      source.summary,
+                                      style: const TextStyle(height: 1.45),
+                                    ),
+                                  ] else ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'This publisher did not provide a summary in its news feed.',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                  if (source.url.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton.icon(
+                                        onPressed: () => _open(source.url),
+                                        icon: const Icon(
+                                          Icons.open_in_new,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          'Open original (optional)',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           );
                         }).toList(),
                       ),
@@ -137,34 +252,67 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
               ),
               _Section(
                 title: 'AI analysis',
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('View AI overview & perspectives'),
-                    onPressed: story.ai == null
-                        ? null
-                        : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => AiAnalysisScreen(
-                                  story: story,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Get a balanced summary of the available coverage, '
+                      'what outlets agree on, and what remains unclear.',
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        icon: _analysisLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                              ),
-                            );
-                          },
-                  ),
+                              )
+                            : const Icon(Icons.auto_awesome),
+                        label: Text(
+                          _analysisLoading
+                              ? 'Analyzing coverage...'
+                              : story.ai == null
+                                  ? 'Generate AI analysis'
+                                  : 'View AI analysis',
+                        ),
+                        onPressed: _analysisLoading
+                            ? null
+                            : () => _openAnalysis(story),
+                      ),
+                    ),
+                    if (_analysisError != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        _analysisError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      if (_analysisError!.contains('OPENAI_API_KEY'))
+                        const Padding(
+                          padding: EdgeInsets.only(top: 6),
+                          child: Text(
+                            'Ask the server administrator to configure the '
+                            'OpenAI key. Do not enter secret keys in the app.',
+                          ),
+                        ),
+                    ],
+                  ],
                 ),
               ),
-              if (story.ai == null)
-                const Padding(
-                  padding: EdgeInsets.only(top: 4),
-                  child: Text(
-                    'AI analysis is currently unavailable.',
-                    textAlign: TextAlign.center,
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                'Summaries use publisher-provided feed excerpts, not full article text.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
                 ),
+                textAlign: TextAlign.center,
+              ),
             ],
           );
         },
@@ -206,14 +354,12 @@ class _Section extends StatelessWidget {
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String? subtitle;
   final VoidCallback onTap;
 
   const _ActionTile({
     required this.icon,
     required this.title,
     required this.onTap,
-    this.subtitle,
   });
 
   @override
@@ -222,7 +368,6 @@ class _ActionTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon),
       title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
       trailing: const Icon(Icons.open_in_new),
       onTap: onTap,
     );
