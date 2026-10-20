@@ -2,7 +2,7 @@ services:
   - type: web
     name: my-news
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: OPENAI_API_KEY
@@ -11,7 +11,3 @@ services:
         value: gpt-4o-mini
       - key: MY_NEWS_MAX_AI_ANALYSES_PER_DAY
         value: "25"
-    disk:
-      name: my-news-data
-      mountPath: /data
-      sizeGB: 1

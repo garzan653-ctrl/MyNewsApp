@@ -74,21 +74,25 @@ account.
 
 ## Deploy
 
-1. Push this project to a GitHub repository.
-2. In Render, create a new **Blueprint** and select that repository. Render
-   reads `render.yaml`, builds the Flutter web app and backend together, and
-   provisions persistent storage for the seven-day SQLite article database.
-3. Enter the OpenAI API key when Render prompts for `OPENAI_API_KEY`; or add it
-   as a secret environment variable on the service's dashboard. Do not add it
-   to source code, Flutter build arguments, or GitHub.
-4. Open the `my-news` service's `onrender.com` URL. The same address serves
-   both the app and the API.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/garzan653-ctrl/MyNewsApp)
 
-The Render service configuration uses a paid Starter instance and a 1 GB
-persistent disk so scheduled collection and seven-day retention continue to
-work across restarts. Review Render's current pricing before deploying. For a
-free or ephemeral container host, use its Docker deployment option and expect
-the stored articles to be lost when the instance is replaced.
+1. Select **Deploy to Render** from the repository's GitHub page, or create a
+   new **Blueprint** in Render and choose this repository. Render reads
+   `render.yaml` and builds the Flutter web app and backend together.
+2. Sign in to Render and authorize access to the GitHub repository.
+3. Enter an OpenAI API key when prompted for `OPENAI_API_KEY` if you want AI
+   analysis; or add it later as a secret environment variable in the service
+   dashboard. Do not add it to source code, Flutter build arguments, or GitHub.
+4. After the service deploys, open its HTTPS `onrender.com` URL on the iPhone.
+   The same address serves both the app and API.
+
+The Blueprint uses Render's free web-service plan and does not provision a
+persistent disk. The service may spin down when idle and take longer to respond
+on the first request after inactivity. SQLite headlines, cached AI results,
+and daily analysis counts can be lost when Render replaces or restarts the
+instance; the service refreshes the news feeds again on startup. Choose a paid
+plan with persistent storage if you need continuous availability and durable
+history, and review Render's current pricing before enabling one.
 
 AI analysis is generated only when requested, stored with its source-version
 fingerprint, and reused for unchanged coverage. The default model is
