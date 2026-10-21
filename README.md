@@ -80,8 +80,8 @@ account.
    new **Blueprint** in Render and choose this repository. Render reads
    `render.yaml` and builds the Flutter web app and backend together.
 2. Sign in to Render and authorize access to the GitHub repository.
-3. Enter an OpenAI API key when prompted for `OPENAI_API_KEY` if you want AI
-   analysis; or add it later as a secret environment variable in the service
+3. Deploy the service without an AI key. To enable AI analysis, add
+   `OPENAI_API_KEY` later as a secret environment variable in the service
    dashboard. Do not add it to source code, Flutter build arguments, or GitHub.
 4. After the service deploys, open its HTTPS `onrender.com` URL on the iPhone.
    The same address serves both the app and API.
