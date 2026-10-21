@@ -31,128 +31,14 @@ class _StoryListScreenState extends State<StoryListScreen> {
     return DateFormat('MMM d, h:mm a').format(date.toLocal());
   }
 
-  Widget _buildStoryCard(Story story) {
-    final colors = Theme.of(context).colorScheme;
-    final hasMultiplePublishers = story.publisherCount > 1;
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => StoryDetailScreen(
-                storyId: story.id,
-                initialStory: story,
-              ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    hasMultiplePublishers
-                        ? Icons.hub_rounded
-                        : Icons.article_rounded,
-                    size: 16,
-                    color: colors.primary,
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    hasMultiplePublishers
-                        ? 'COVERED BY MULTIPLE OUTLETS'
-                        : 'LATEST',
-                    style: TextStyle(
-                      color: colors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _formatDate(story.updatedAt),
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                story.headline,
-                style: const TextStyle(
-                  fontSize: 19,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.35,
-                ),
-              ),
-              if (story.publishers.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: story.publishers.map((publisher) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.primaryContainer.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Text(
-                        publisher,
-                        style: TextStyle(
-                          color: colors.onPrimaryContainer,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-              const SizedBox(height: 15),
-              Divider(height: 1, color: colors.outlineVariant),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome_outlined,
-                    size: 16,
-                    color: colors.secondary,
-                  ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: Text(
-                      '${story.publisherCount} '
-                      'outlet${story.publisherCount == 1 ? '' : 's'} · '
-                      'Read the coverage & analysis',
-                      style: TextStyle(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.arrow_forward_rounded, color: colors.primary),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Color _publisherColor(String publisher) {
+    const colors = [
+      Color(0xff6254dc),
+      Color(0xff008f83),
+      Color(0xffe45b72),
+      Color(0xffdc8a20),
+    ];
+    return colors[publisher.hashCode.abs() % colors.length];
   }
 
   @override
@@ -213,178 +99,195 @@ class _StoryListScreenState extends State<StoryListScreen> {
               );
             }
 
-            final publisherTotal =
-                stories.expand((story) => story.publishers).toSet().length;
-
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(top: 14, bottom: 28),
+              padding: const EdgeInsets.only(top: 8, bottom: 20),
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
-                  child: Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xff17243a), Color(0xff29475b)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(26),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.public_rounded,
-                              color: Color(0xff93ded0),
-                              size: 19,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                              style: const TextStyle(
-                                color: Color(0xffdce6ed),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xffa8ddc1).withValues(
-                                  alpha: 0.16,
-                                ),
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(
-                                    Icons.circle,
-                                    size: 7,
-                                    color: Color(0xff81e1b0),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'LIVE',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 23),
-                        const Text(
-                          'The news,\nin perspective.',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 31,
-                            height: 1.05,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.7,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'See how different outlets cover the stories shaping today.',
-                          style: TextStyle(
-                            color: Color(0xffdce6ed),
-                            fontSize: 14,
-                            height: 1.45,
-                          ),
-                        ),
-                        const SizedBox(height: 19),
-                        Wrap(
-                          spacing: 9,
-                          runSpacing: 8,
-                          children: [
-                            _HeroStat(
-                              icon: Icons.view_headline_rounded,
-                              label: '${stories.length} current stories',
-                            ),
-                            _HeroStat(
-                              icon: Icons.newspaper_rounded,
-                              label: '$publisherTotal news outlets',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(21, 2, 20, 5),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
                   child: Row(
                     children: [
-                      const Expanded(
-                        child: Text(
-                          'Today’s headlines',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xff7667ed), Color(0xff39c6ae)],
                           ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 21,
                         ),
                       ),
-                      Text(
-                        'Updated live',
+                      const SizedBox(width: 11),
+                      const Text(
+                        'Top stories',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 12,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.4,
                         ),
                       ),
                     ],
                   ),
                 ),
-                ...stories.map(_buildStoryCard),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(69, 0, 20, 8),
+                  child: Text(
+                    'Grouped coverage from multiple publishers',
+                    style: TextStyle(color: Color(0xff66637b)),
+                  ),
+                ),
+                ...stories.map(
+                  (story) => Card(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StoryDetailScreen(
+                              storyId: story.id,
+                              initialStory: story,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              story.headline,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                height: 1.28,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xff25223a),
+                              ),
+                            ),
+                            const SizedBox(height: 13),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xfffff0e4),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.bolt_rounded,
+                                        size: 15,
+                                        color: Color(0xffd97919),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        '${story.publisherCount} outlet'
+                                        '${story.publisherCount == 1 ? '' : 's'}',
+                                        style: const TextStyle(
+                                          color: Color(0xffa95312),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xffe8f7f3),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    _formatDate(story.updatedAt),
+                                    style: const TextStyle(
+                                      color: Color(0xff16796b),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (story.publishers.isNotEmpty) ...[
+                              const SizedBox(height: 11),
+                              Wrap(
+                                spacing: 7,
+                                runSpacing: 7,
+                                children: story.publishers.map((publisher) {
+                                  final color = _publisherColor(publisher);
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      publisher,
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            const Divider(height: 1, color: Color(0xffefedfa)),
+                            const SizedBox(height: 10),
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.compare_arrows_rounded,
+                                  size: 17,
+                                  color: Color(0xff5b4bdb),
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Select to compare coverage',
+                                  style: TextStyle(
+                                    color: Color(0xff5b4bdb),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Spacer(),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 19,
+                                  color: Color(0xff5b4bdb),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _HeroStat extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _HeroStat({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: const Color(0xffb4d8d1)),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
