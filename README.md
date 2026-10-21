@@ -4,6 +4,9 @@ My News is a Flutter app with a Python backend. The backend collects current
 headlines from RSS feeds, groups closely related coverage, and keeps up to
 seven days of articles in SQLite. The app shows publisher-provided story
 summaries inline and can generate cached AI analysis of the available coverage.
+RSS feeds may contain excerpts rather than full articles, so the app does not
+scrape publisher websites or reproduce article text that is not included in a
+feed.
 
 ## Run the complete app locally
 

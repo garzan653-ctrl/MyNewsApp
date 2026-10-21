@@ -130,17 +130,40 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                 ),
               ),
               const SizedBox(height: 18),
+              Card(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                child: const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.menu_book_outlined),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Read the publisher-provided story text below. '
+                          'News feeds may include an excerpt rather than the '
+                          'full article. Opening the original publisher link '
+                          'is optional.',
+                          style: TextStyle(height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               _Section(
-                title: 'Story overview',
+                title: 'Coverage overview',
                 child: Text(
                   story.overview?.trim().isNotEmpty == true
                       ? story.overview!
-                      : 'No overview is available.',
+                      : 'No publisher-provided overview is available.',
                   style: const TextStyle(fontSize: 16, height: 1.45),
                 ),
               ),
               _Section(
-                title: 'Coverage at a glance',
+                title: 'Publisher-provided story text',
                 child: story.sources.isEmpty
                     ? const Text('No source coverage available.')
                     : Column(
